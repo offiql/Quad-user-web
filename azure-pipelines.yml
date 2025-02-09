@@ -1,0 +1,42 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- develop
+- prod
+
+pool: Default
+
+variables:
+  - name: MajorVersion
+    value: 0
+  - name: Version.MajorMinor
+    value: $(MajorVersion).1
+  - name: Version.Revision
+    value: $[counter(variables['Version.MajorMinor'], 0)]
+  - name: Version
+    value: $(Version.MajorMinor).$(Version.Revision)
+  - name: ProjectId
+    ${{ if eq( variables['Build.SourceBranchName'], 'prod' ) }}: 
+      value: $(PROJECT_ID)
+    ${{ if ne( variables['Build.SourceBranchName'], 'prod' ) }}: 
+      value: $(DEV_PROJECT_ID)
+  - name: Push
+    value: ${{ or(contains(variables['Build.SourceBranchName'], 'develop'), contains(variables['Build.SourceBranchName'], 'prod')) }}
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSource: 'spec'
+    versionSpec: '20.x'
+- script: corepack enable
+  displayName: 'Enable Corepack'
+
+- task: vercel-deployment-task@1
+  inputs:
+    vercelProjectId: $(ProjectId)
+    vercelOrgId: $(ORG_ID)
+    vercelToken: $(VERCEL_TOKEN)
+    production: true
