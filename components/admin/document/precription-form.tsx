@@ -16,10 +16,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { backend_url } from "@/lib/utils";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { X } from "lucide-react";
-import { Dispatch, SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PrescriptionPDF } from "./precription-pdf";
-import { getUserData } from "@/lib/getTokens";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Medicine {
   id: number;
@@ -54,7 +60,12 @@ export default function PrescriptionForm({
   user: any;
   handleAssignDocument: any;
 }) {
-  const [availableComplaints] = useState([
+  const [isNewComplaintDialogOpen, setIsNewComplaintDialogOpen] =
+    useState(false);
+  const [newComplaint, setNewComplaint] = useState("");
+  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [availableComplaints, setAvailableComplaints] = useState([
     "Fever with chills",
     "Headache",
     "Cough",
@@ -88,7 +99,14 @@ export default function PrescriptionForm({
       advice: [...prev.advice, ""],
     }));
   };
-
+  useEffect(() => {
+    setAvailableComplaints((prev) => {
+      const newComplaints = formData.complaints.filter(
+        (c) => !prev.includes(c)
+      );
+      return [...prev, ...newComplaints];
+    });
+  }, [formData.complaints]);
   const handleSave = async () => {
     try {
       const response = await fetch(
@@ -98,7 +116,7 @@ export default function PrescriptionForm({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ formData, status: doc.status }),
+          body: JSON.stringify({ formData, status: doc.status, rejectionReason }),
         }
       );
 
@@ -111,42 +129,67 @@ export default function PrescriptionForm({
       console.error("Error saving data:", error);
     }
   };
+
   const handleStatusChange = (value: "pending" | "confirmed" | "rejected") => {
     setDoc((prev: any) => ({ ...prev, status: value }));
+    if (value === "rejected") {
+      setIsRejectionDialogOpen(true);
+    }
+  };
+
+  const handleAddNewComplaint = () => {
+    if (newComplaint.trim() !== "") {
+      setFormData((prev: any) => ({
+        ...prev,
+        complaints: [...prev.complaints, newComplaint.trim()],
+      }));
+      setAvailableComplaints((prev) => [...prev, newComplaint.trim()]);
+      setNewComplaint("");
+      setIsNewComplaintDialogOpen(false);
+    }
+  };
+  const handleRejectionConfirm = () => {
+    setDoc((prev: any) => ({
+      ...prev,
+      status: "rejected",
+      rejectionReason: rejectionReason,
+    }));
+    setIsRejectionDialogOpen(false);
+    handleSave();
   };
   return (
-    <div className="flex-1 p-6 overflow-y-auto hide-scrollbar overflow-hidden overscroll-contain">
+    <div className="flex-1 h-dvh relative z-10 p-6 overflow-y-auto hide-scrollbar overflow-hidden overscroll-contain">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Decoded Document</h2>
-        {user && (
-          <div className="flex items-center space-x-2">
-            <Select value={doc.status} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={handleSave}>Save</Button>
-            {user?.type === "team" && (
-              <Button onClick={handleAssignDocument}>Next</Button>
-            )}
-            <PDFDownloadLink
-              document={<PrescriptionPDF formData={formData} />}
-              fileName="decoded-document.pdf"
-            >
-              {({ blob, url, loading, error }) => (
-                <Button disabled={loading}>
-                  {loading ? "Generating PDF..." : "Download PDF"}
-                </Button>
-              )}
-            </PDFDownloadLink>
-          </div>
-        )}
+        <h2 className="text-lg font-semibold">Decoded Document</h2>
+
+        <div className="flex items-center space-x-2">
+          <Select value={doc.status} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={handleSave}>Save</Button>
+          {user?.type === "team" && (
+            <Button variant={"success"} onClick={handleAssignDocument}>
+              Next{" "}
+            </Button>
+          )}
+
+          <PDFDownloadLink
+            document={<PrescriptionPDF formData={formData} />}
+            fileName="decoded-document.pdf"
+          >
+            <Button className="border" variant={"ghost"}>
+              Download PDF
+            </Button>
+          </PDFDownloadLink>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -167,7 +210,16 @@ export default function PrescriptionForm({
 
         {/* Chief complaints */}
         <div className="space-y-2">
-          <Label>Chief complaints</Label>
+          <div className="flex justify-between items-center">
+            <Label>Chief complaints</Label>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsNewComplaintDialogOpen(true)}
+            >
+              Add Complaint
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {availableComplaints.map((complaint) => (
               <Badge
@@ -326,6 +378,54 @@ export default function PrescriptionForm({
           />
         </div>
       </div>
+      <Dialog
+        open={isRejectionDialogOpen}
+        onOpenChange={setIsRejectionDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reason for Rejection</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="Enter the reason for rejection..."
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsRejectionDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRejectionConfirm}>Confirm Rejection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={isNewComplaintDialogOpen}
+        onOpenChange={setIsNewComplaintDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Complaint</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={newComplaint}
+            onChange={(e) => setNewComplaint(e.target.value)}
+            placeholder="Enter new complaint..."
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsNewComplaintDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddNewComplaint}>Add Complaint</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
