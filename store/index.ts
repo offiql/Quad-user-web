@@ -2,11 +2,13 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import authReducer from './authSlice';
 import socketReducer from './socketSlice';
+import notificationReducer from './notificationSlice';
 import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 
 const rootReducer = combineReducers({
   auth: authReducer,
   socket: socketReducer,
+  notifications: notificationReducer
 });
 
 const createNoopStorage = () => {

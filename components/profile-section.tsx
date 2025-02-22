@@ -96,7 +96,7 @@ export default function ProfileSection() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="font-semibold">Pending Checkup</h3>
+        <h3 className="font-semibold text-[#59748A]">Pending Checkup</h3>
         <div className="relative bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between p-4">
             <button

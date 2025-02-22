@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { MdFamilyRestroom } from "react-icons/md";
 import { FaHospitalUser } from "react-icons/fa6";
 import { usePathname } from "next/navigation";
+import NotificationsComponent from "./notificationComponent";
 
 const navigation = [
   {
@@ -54,6 +55,7 @@ export default function Header() {
           <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search" className="pl-8 w-64" />
         </div>
+        <NotificationsComponent/>
       </div>
     </header>
   );

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
+import { addNotification } from "@/store/notificationSlice";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -67,6 +68,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     socket.off("newNotification");
     socket.on("newNotification", (notification) => {
       toast.info(notification.message);
+      dispatch(addNotification(notification));
       console.log("New Notification:", notification);
     });
 
