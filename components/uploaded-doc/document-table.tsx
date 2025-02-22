@@ -92,6 +92,7 @@ export default function DocumentTable({
                     <span
                       className={`
                       ${doc.status === "pending" ? "bg-yellow-100 text-yellow-700" : ""}
+                      ${doc.status === "processing" ? "bg-orange-100 text-orange-700" : ""}
                       ${doc.status === "confirmed" ? "bg-green-100 text-green-700" : ""}
                       ${doc.status === "rejected" ? "bg-red-100 text-red-700" : ""}
                       p-0.5 px-4 rounded-full text-center mx-auto

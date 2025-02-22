@@ -3,26 +3,32 @@
 import Sidebar from "@/components/sidebar";
 import { getUserData } from "@/lib/getTokens";
 import { backend_url } from "@/lib/utils";
+import { getSocket, disconnectSocket } from "@/lib/socket";
 import { setPatientData } from "@/store/authSlice";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
+  const [patientId, setPatientId] = useState<string | null>(null);
 
+  // Fetch patient details
   useEffect(() => {
     const getPatientDetails = async () => {
       const user = getUserData();
+      if (!user) {
+        router.push("/personal-details");
+        return;
+      }
+
       try {
         const userResponse = await fetch(`${backend_url}/patient/check-user`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: user?.userId,
             email: user?.email,
@@ -30,12 +36,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         });
 
         const userExists = await userResponse.json();
-
         if (userExists.exists) {
-          console.log(userExists.patient);
           dispatch(setPatientData(userExists.patient));
+          setPatientId(userExists.patient._id);
         } else {
-          router.push("/personal-details"); // Redirect to the form page
+          router.push("/personal-details");
         }
       } catch (error) {
         console.error("Error while fetching token: ", error);
@@ -47,6 +52,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     getPatientDetails();
   }, [dispatch, router]);
+
+  // Handle socket connection separately
+  useEffect(() => {
+    if (!patientId) return;
+
+    const socket = getSocket();
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    // Ensure only one event listener is set
+    socket.off("newNotification");
+    socket.on("newNotification", (notification) => {
+      toast.info(notification.message);
+      console.log("New Notification:", notification);
+    });
+
+    socket.emit("subscribe", patientId);
+
+    return () => {
+      socket.off("newNotification");
+      disconnectSocket();
+    };
+  }, [patientId]); // Run only when patientId is available
 
   if (isLoading) {
     return (
