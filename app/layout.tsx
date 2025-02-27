@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${poppins.variable} font-sans antialiased`}>
+      <body suppressHydrationWarning className={`${poppins.variable} font-sans antialiased`}>
         <NextTopLoader color="#3B0764" />
         <Toaster richColors position="top-right" closeButton />
         <ReduxProvider>{children}</ReduxProvider>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, FileText, Upload, FileImage } from "lucide-react";
 import { FaHospitalUser } from "react-icons/fa6";
-import { MdFamilyRestroom } from "react-icons/md";
+import { MdFamilyRestroom, MdNotificationAdd } from "react-icons/md";
 import { Urbanist } from "next/font/google";
 import { getUserData } from "@/lib/getTokens";
 
@@ -57,6 +57,11 @@ const adminNavigation = [
     name: "Team",
     href: "/admin/team",
     icon: MdFamilyRestroom,
+  },
+  {
+    name: "Notification",
+    href: "/admin/notifications",
+    icon: MdNotificationAdd
   },
 ];
 

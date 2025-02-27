@@ -82,3 +82,15 @@ export interface DocumentDetails {
   fileKey: string;
   canViewPatients: string[];
 }
+
+export type NotificationType = "once" | "daily" | "weekly" | "monthly";
+
+export type Notification = {
+  _id?: string;
+  title: string;
+  message: string;
+  sendType: string;
+  type: NotificationType;
+  createdAt: Date;
+  lastUsed?: Date;
+};
