@@ -1,3 +1,4 @@
+"use client"
 import HealthMonitoring from "@/components/dashboard/monitor";
 import PeriodTracker from "@/components/dashboard/periods-tracker";
 import FamilyTree from "@/components/FamilyTree";
@@ -9,6 +10,8 @@ import Notifications from "@/components/notifications";
 import PendingCheckups from "@/components/pending-checkups";
 import ProfileSection from "@/components/profile-section";
 import WelcomeCard from "@/components/welcome-card";
+import { generateToken } from "@/lib/firebase";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
   return (

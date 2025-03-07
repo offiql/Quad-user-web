@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { generateToken } from "@/lib/firebase";
 import { getAccessToken, getUserData } from "@/lib/getTokens";
 import { backend_url } from "@/lib/utils";
 import { setPatientData } from "@/store/authSlice";
@@ -24,7 +25,7 @@ interface UserData {
   email: string;
   name: string;
   userId: string;
-  type:string;
+  type: string;
 }
 
 export default function PersonalDetails() {
@@ -50,22 +51,28 @@ export default function PersonalDetails() {
     country: "",
     address: "",
     phone: "",
+    fcm_token: ""
   });
 
   useEffect(() => {
-    const user = getUserData();
-    setUserData(user);
-    if (user && user.name && user.userId) {
-      const nameParts = user.name.split(" ");
-      setFormData((prev) => ({
-        ...prev,
-        firstName: nameParts[0] || "",
-        lastName: nameParts[nameParts.length - 1] || "",
-        middleName: nameParts.slice(1, -1).join(" ") || "",
-        userId: user.userId,
-        email: user.email,
-      }));
-    }
+    const setData = async () => {
+      const user = getUserData();
+      setUserData(user);
+      const fcm_token = await generateToken();
+      if (user && user.name && user.userId) {
+        const nameParts = user.name.split(" ");
+        setFormData((prev) => ({
+          ...prev,
+          firstName: nameParts[0] || "",
+          lastName: nameParts[nameParts.length - 1] || "",
+          middleName: nameParts.slice(1, -1).join(" ") || "",
+          userId: user.userId,
+          email: user.email,
+          fcm_token: fcm_token ?? ""
+        }));
+      }
+    };
+    setData();
   }, []);
 
   const handleChange = (
@@ -87,7 +94,7 @@ export default function PersonalDetails() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`
+          Authorization: `Bearer ${access_token}`,
         },
         body: JSON.stringify(formData),
       });
@@ -95,12 +102,11 @@ export default function PersonalDetails() {
       if (response.ok) {
         toast.success("Details saved successfully!");
         dispatch(setPatientData(data));
-        console.log(userData)
-        if(userData?.type==="admin"){
+        console.log(userData);
+        if (userData?.type === "admin") {
           router.push("/admin/dashboard");
-        }else if(userData?.type==="team")
-          router.push("/team/dashboard")
-        else router.push("/dashboard")
+        } else if (userData?.type === "team") router.push("/team/dashboard");
+        else router.push("/dashboard");
       } else {
         toast.error("Failed to save details");
       }

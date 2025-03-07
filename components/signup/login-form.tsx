@@ -8,7 +8,7 @@ import { auth_url, backend_url } from "@/lib/utils";
 import { setPatientData, setTokens, setUserData } from "@/store/authSlice";
 import { motion } from "framer-motion";
 import { jwtDecode } from "jwt-decode";
-import { Eye, EyeOff } from "lucide-react";
+import { CloudFog, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,6 +16,7 @@ import { useDispatch } from "react-redux";
 import { toast } from "sonner";
 import { useSession, signIn } from "next-auth/react";
 import { getUserData } from "@/lib/getTokens";
+import { generateToken } from "@/lib/firebase";
 
 type AuthorizeState = {
   response_type: string;
@@ -111,6 +112,7 @@ export default function LoginForm({
     dispatch(setTokens({ access_token, refresh_token }));
     dispatch(setUserData(userData));
     toast.success("Log In Successful!");
+    const fcm_token = await generateToken();
     // Check if user exists in backend
     const userResponse = await fetch(`${backend_url}/patient/check-user`, {
       method: "POST",
@@ -120,6 +122,7 @@ export default function LoginForm({
       body: JSON.stringify({
         userId: userData?.userId,
         email: userData?.email,
+        fcm_token: fcm_token ?? "",
       }),
     });
 

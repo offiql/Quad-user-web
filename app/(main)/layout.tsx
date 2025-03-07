@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { addNotification } from "@/store/notificationSlice";
+import { generateToken } from "@/lib/firebase";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -27,12 +28,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        const fcm_token = await generateToken();
         const userResponse = await fetch(`${backend_url}/patient/check-user`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: user?.userId,
             email: user?.email,
+            fcm_token: fcm_token ?? "",
           }),
         });
 
